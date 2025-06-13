@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carteira Virtual Escolar - Alunos</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import {
+      getAuth,
+      signInWithPopup,
+      GoogleAuthProvider,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBaES1733ncqRt_GLMkqtSOilijEtGZhks",
+      authDomain: "maladins-494d6.firebaseapp.com",
+      projectId: "maladins-494d6",
+      storageBucket: "maladins-494d6.appspot.com",
+      messagingSenderId: "734297372043",
+      appId: "1:734297372043:web:d08186d7a45ef356f02b8e",
+      measurementId: "G-8W6RLX3948"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const provider = new GoogleAuthProvider();
+
+    async function loginComGoogle() {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        if (!user.email.endsWith("@jopers.com.br")) {
+          alert("Somente emails @jopers.com.br são permitidos.");
+          await signOut(auth);
+          return;
+        }
+
+        const docRef = doc(db, "users", user.email);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+          await setDoc(docRef, { balance: 0 });
+        }
+
+        document.getElementById("painel").classList.remove("hidden");
+        document.getElementById("userEmail").textContent = user.email;
+        document.getElementById("saldo").textContent = (docSnap.exists() ? docSnap.data().balance : 0);
+        document.getElementById("loginArea").classList.add("hidden");
+
+      } catch (error) {
+        console.error("Erro ao autenticar:", error);
+        alert("Erro ao fazer login com Google: " + error.message);
+      }
+    }
+
+    window.loginComGoogle = loginComGoogle;
+  </script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .hidden { display: none; }
+    input, button { display: block; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>Carteira Virtual Escolar - Aluno</h1>
+
+  <div id="loginArea">
+    <button onclick="loginComGoogle()">Entrar com Google (@jopers.com.br)</button>
+  </div>
+
+  <div id="painel" class="hidden">
+    <p><strong>Usuário:</strong> <span id="userEmail"></span></p>
+    <p><strong>Saldo atual:</strong> <span id="saldo">0</span> maladins</p>
+    <button onclick="location.reload()">Sair</button>
+  </div>
+</body>
+</html>
+
